@@ -31,6 +31,23 @@ def decrypt_packet(data: bytes, state: bytes = DEFAULT_STATE) -> bytes:
     return bytes(result)
 
 
+
+def encrypt_packet(data: bytes, state: bytes = DEFAULT_STATE) -> bytes:
+    """Encrypt a PPCS UDP payload using the four-byte cipher state."""
+    if len(state) != 4:
+        raise ValueError("PPCS cipher state must contain exactly 4 bytes")
+
+    result = bytearray()
+    previous = 0
+
+    for value in data:
+        index = (previous + state[previous & 3]) & 0xff
+        encrypted = value ^ XOR_TABLE[index]
+        result.append(encrypted)
+        previous = encrypted
+
+    return bytes(result)
+
 def is_valid_ppcs_packet(data: bytes) -> bool:
     """Validate the four-byte PPCS header and payload length."""
     return (

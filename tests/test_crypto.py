@@ -37,5 +37,24 @@ class CryptoTests(unittest.TestCase):
             decrypt_packet(b"\xb5", state=b"\x00")
 
 
+
+    def test_encrypt_decrypt_roundtrip(self):
+        from tosee_b.crypto import encrypt_packet, decrypt_packet
+
+        for data in (
+            b"",
+            b"\\xf1\\xd0\\x00\\x04\\xd1\\x01\\x00\\x01",
+            bytes(range(256)),
+        ):
+            with self.subTest(length=len(data)):
+                self.assertEqual(decrypt_packet(encrypt_packet(data)), data)
+
+    def test_encrypt_invalid_state(self):
+        from tosee_b.crypto import encrypt_packet
+
+        with self.assertRaises(ValueError):
+            encrypt_packet(b"test", state=b"bad")
+
+
 if __name__ == "__main__":
     unittest.main()
