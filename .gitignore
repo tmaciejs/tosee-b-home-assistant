@@ -1,0 +1,52 @@
+# Private network captures
+*.pcap
+*.pcapng
+*.cap
+
+# Video and audio recordings
+*.h264
+*.h265
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.wav
+*.aac
+
+# Proprietary Android binaries
+*.apk
+*.so
+*.dex
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local configuration and device credentials
+.env
+.env.*
+!.env.example
+secrets.*
+credentials.*
+device_config.json
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+
+# Local backup files
+*.bak
+*.backup
+*~
+
+# Local backup files
+*.bak
+*.backup
+*~
+
+# Private project notes
+/Read.txt
