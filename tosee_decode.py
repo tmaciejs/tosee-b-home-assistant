@@ -19,7 +19,7 @@ def main():
     parser.add_argument("pcap", type=Path, help="Input PCAP file")
     parser.add_argument("-o", "--output", type=Path, required=True,
                         help="Output .h264 file")
-    parser.add_argument("--device-ip", default="192.168.1.138",
+    parser.add_argument("--device-ip", required=True,
                         help="Doorbell IPv4 address")
     parser.add_argument(
         "--mp4", action="store_true",
