@@ -43,11 +43,11 @@ Instalacja w Debianie:
 
 Odzyskanie obrazu H.264:
 
-    python3 tosee_decode.py nagranie.pcap -o odzyskane.h264 --device-ip 192.168.1.138
+    python3 tosee_decode.py nagranie.pcap -o odzyskane.h264 --device-ip 192.0.2.10
 
 Automatyczne utworzenie H.264 i MP4:
 
-    python3 tosee_decode.py nagranie.pcap -o odzyskane.h264 --mp4 --fps 15 --device-ip 192.168.1.138
+    python3 tosee_decode.py nagranie.pcap -o odzyskane.h264 --mp4 --fps 15 --device-ip 192.0.2.10
 
 Adres IP należy zastąpić adresem własnego dzwonka.
 

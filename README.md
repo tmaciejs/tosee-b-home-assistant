@@ -34,11 +34,11 @@ On Debian:
 
 Extract H.264:
 
-    python3 tosee_decode.py capture.pcap -o recovered.h264 --device-ip 192.168.1.138
+    python3 tosee_decode.py capture.pcap -o recovered.h264 --device-ip 192.0.2.10
 
 Extract H.264 and create MP4:
 
-    python3 tosee_decode.py capture.pcap -o recovered.h264 --mp4 --fps 15 --device-ip 192.168.1.138
+    python3 tosee_decode.py capture.pcap -o recovered.h264 --mp4 --fps 15 --device-ip 192.0.2.10
 
 Replace the example IP with your doorbell's IP address.
 
