@@ -2,6 +2,8 @@
 
 Open-source project for ToSee-B battery-powered video doorbells.
 
+Polish documentation: [README_PL.md](docs/README_PL.md)
+
 ## Current status
 
 ### Working
@@ -61,7 +63,7 @@ device credentials, or unique device identifiers.
 GNU General Public License v3.
 
 Uses a PPCS lookup table originating from the GPLv3-licensed
-cloudedge-client project. Attribution will be verified before release.
+cloudedge-client project. See [NOTICE.md](NOTICE.md) for attribution.
 
 ## Disclaimer
 
