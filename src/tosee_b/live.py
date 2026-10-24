@@ -6,6 +6,7 @@ No credentials, device identifiers or video are stored by this module.
 """
 
 import json
+import logging
 import socket
 import struct
 import time
@@ -39,6 +40,7 @@ class ToSeeBLive:
         self.client_uuid = client_uuid
         self.on_h264 = on_h264
 
+        self._last_video_sequence = None
         self.parser = VideoFrameParser()
         self.sync = H264Sync()
         self.stats = LiveStats()
@@ -67,6 +69,17 @@ class ToSeeBLive:
 
             if channel == 1:
                 self.stats.video_packets += 1
+
+                previous = self._last_video_sequence
+                if previous is not None:
+                    expected = (previous + 1) & 0xFFFF
+                    if sequence != expected:
+                        logging.warning(
+                            "TOSEE_VIDEO_SEQUENCE previous=%d expected=%d received=%d",
+                            previous, expected, sequence,
+                        )
+                self._last_video_sequence = sequence
+
                 for frame in self.parser.feed(payload):
                     self.stats.video_blocks += 1
                     h264 = self.sync.accept(frame)
