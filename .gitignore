@@ -50,3 +50,8 @@ device_config.json
 
 # Private project notes
 /Read.txt
+
+# Editor temporary and swap files
+*.swp
+*.swo
+*.kate-swp
