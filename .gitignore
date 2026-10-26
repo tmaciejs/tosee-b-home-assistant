@@ -55,3 +55,24 @@ device_config.json
 *.swp
 *.swo
 *.kate-swp
+
+# ToSee-B private backups and diagnostic data
+/backups/
+/diagnostics/
+*.tar
+*.tar.gz
+*.tgz
+*.bin
+*.alaw
+*.log
+*.before_*
+*.before-*
+*.working.py
+
+# Private credentials and local configuration
+*.key
+*.pem
+*.p12
+*.pfx
+*.credentials
+*tosee*credentials*

@@ -13,12 +13,14 @@ import time
 from dataclasses import dataclass
 
 from .ack import build_drw_ack
+from .audio import extract_alaw
 from .commands import build_drw_packet
 from .crypto import encrypt_packet
 from .drw import parse_drw_packet
 from .session import build_init_drw_packet, parse_drw_ack
 from .transport import perform_punch
 from .video import H264Sync, VideoFrameParser
+from .video_reorder import VideoReorderBuffer
 
 
 @dataclass
@@ -33,17 +35,57 @@ class LiveStats:
 class ToSeeBLive:
     """Run one bounded ToSee-B LAN video session."""
 
-    def __init__(self, sock, address, did, client_uuid, on_h264):
+    def __init__(self, sock, address, did, client_uuid, on_h264, on_audio=None):
         self.sock = sock
         self.address = address
         self.did = did
         self.client_uuid = client_uuid
         self.on_h264 = on_h264
+        self.on_audio = on_audio
 
         self._last_video_sequence = None
         self.parser = VideoFrameParser()
+        self.reorder = VideoReorderBuffer(window_size=128)
         self.sync = H264Sync()
+        self._video_resync_needed = False
+        self._video_gap_started_at = None
+        self._video_gap_timeout = 0.250
         self.stats = LiveStats()
+
+    def _check_video_gap_timeout(self, now):
+        if not self.reorder.has_gap:
+            self._video_gap_started_at = None
+            return
+
+        if self._video_gap_started_at is None:
+            self._video_gap_started_at = now
+            return
+
+        if not self.reorder.gap_expired(
+            now,
+            self._video_gap_timeout,
+            self._video_gap_started_at,
+        ):
+            return
+
+        logging.warning("TOSEE_VIDEO_GAP_TIMEOUT")
+
+        expected = self.reorder.expected_sequence
+        pending = self.reorder._pending
+
+        restart_sequence = max(
+            pending,
+            key=lambda seq: (seq - expected) & 0xFFFF,
+        )
+        restart_sequence = (restart_sequence + 1) & 0xFFFF
+
+        self.reorder.discard_gap()
+        self.reorder.expected_sequence = restart_sequence
+        self.parser.reset()
+        self.sync.reset()
+
+        self._video_resync_needed = True
+        self._video_gap_started_at = None
 
     def _receive(self, timeout):
         self.sock.settimeout(max(0.01, timeout))
@@ -51,6 +93,7 @@ class ToSeeBLive:
         try:
             packet, sender = self.sock.recvfrom(65535)
         except socket.timeout:
+            self._check_video_gap_timeout(time.monotonic())
             return None
 
         if sender != self.address:
@@ -80,17 +123,36 @@ class ToSeeBLive:
                         )
                 self._last_video_sequence = sequence
 
-                for frame in self.parser.feed(payload):
-                    self.stats.video_blocks += 1
-                    h264 = self.sync.accept(frame)
+                now = time.monotonic()
+                self._check_video_gap_timeout(now)
 
-                    if h264 is not None:
-                        self.on_h264(h264)
-                        self.stats.output_blocks += 1
-                        self.stats.output_bytes += len(h264)
+                ordered_payloads = self.reorder.push(sequence, payload)
+                self._check_video_gap_timeout(now)
+
+                for ordered_payload in ordered_payloads:
+                    if self._video_resync_needed:
+                        frames = self.parser.feed_keyframe_resync(ordered_payload)
+                        if not frames:
+                            continue
+
+                        self._video_resync_needed = False
+                        frames.extend(self.parser.feed(b""))
+                    else:
+                        frames = self.parser.feed(ordered_payload)
+
+                    for frame in frames:
+                        self.stats.video_blocks += 1
+                        h264 = self.sync.accept(frame)
+
+                        if h264 is not None:
+                            self.on_h264(h264)
+                            self.stats.output_blocks += 1
+                            self.stats.output_bytes += len(h264)
 
             elif channel == 2:
                 self.stats.audio_packets += 1
+                if self.on_audio is not None:
+                    self.on_audio(extract_alaw(payload))
 
         return packet
 
