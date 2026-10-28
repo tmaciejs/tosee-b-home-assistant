@@ -78,3 +78,91 @@ class AudioAckTracker:
     @property
     def complete(self):
         return bool(self.sent) and not self.pending
+
+
+class AudioFrameSender:
+    """Send timed channel-3 A-law frames on an existing UDP socket."""
+
+    FRAME_INTERVAL = 0.040
+
+    def __init__(self, sock, address, start_sequence=0):
+        if not isinstance(start_sequence, int) or not 0 <= start_sequence <= 0xFFFF:
+            raise ValueError("Invalid starting DRW sequence")
+
+        self.sock = sock
+        self.address = address
+        self.drw_sequence = start_sequence
+        self.audio_sequence = 0
+        self.next_send_time = None
+        self.acks = AudioAckTracker()
+
+    def start(self, now):
+        """Start a new audio burst, resetting its frame counter."""
+        self.audio_sequence = 0
+        self.next_send_time = now
+
+    def send_if_due(self, samples, now):
+        """Send one frame if its scheduled time has arrived."""
+        if self.next_send_time is None:
+            return False
+
+        if now + 0.000001 < self.next_send_time:
+            return False
+
+        packet = build_audio_packet(
+            self.drw_sequence,
+            self.audio_sequence,
+            samples,
+        )
+
+        self.sock.sendto(packet, self.address)
+        self.acks.mark_sent(self.drw_sequence)
+
+        self.drw_sequence = (self.drw_sequence + 1) & 0xFFFF
+        self.audio_sequence += 1
+
+        self.next_send_time += self.FRAME_INTERVAL
+
+        if self.next_send_time < now:
+            self.next_send_time = now + self.FRAME_INTERVAL
+
+        return True
+
+    def stop(self):
+        self.next_send_time = None
+
+
+class AudioFrameQueue:
+    """Bounded queue for low-latency talkback audio."""
+
+    def __init__(self, max_frames=10):
+        import queue
+
+        if not isinstance(max_frames, int) or max_frames <= 0:
+            raise ValueError("Invalid queue capacity")
+
+        self._queue = queue.Queue(maxsize=max_frames)
+
+    def put(self, samples: bytes):
+        import queue
+
+        if not isinstance(samples, bytes) or len(samples) != AUDIO_SAMPLES:
+            raise ValueError("Audio frame must contain 320 bytes")
+
+        try:
+            self._queue.put_nowait(samples)
+        except queue.Full:
+            self._queue.get_nowait()
+            self._queue.put_nowait(samples)
+
+    def get_nowait(self):
+        import queue
+
+        try:
+            return self._queue.get_nowait()
+        except queue.Empty:
+            return None
+
+    def clear(self):
+        while self.get_nowait() is not None:
+            pass
