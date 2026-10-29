@@ -19,9 +19,59 @@ class ExperimentalToSeeBLive(SafeToSeeBLive):
         self.audio_sender = AudioFrameSender(self.sock, self.address)
         self.audio_queue = AudioFrameQueue(max_frames=10)
         self.talk_started_at = None
+        self.talk_session = None
+
+    def bind_talk_session(self, session):
+        """Attach shared talk state; UDP remains owned by LIVE thread."""
+        self.talk_session = session
+        session.attach_live(self)
+
+    def _sync_talk_request(self):
+        """Apply shared talk requests in the LIVE receiver thread."""
+        session = self.talk_session
+        if session is None:
+            return
+
+        requested = session.should_talk(self)
+        state = self.talk_controller.state
+
+        if not requested:
+            self.audio_sender.stop()
+            self.audio_queue.clear()
+            if state in ("starting", "active"):
+                self.talk_controller.stop()
+        elif state == "idle":
+            self.talk_controller.start()
+
+    def run(self, duration=10.0):
+        """Always detach talk state, including on PUNCH failure."""
+        try:
+            return super().run(duration=duration)
+        finally:
+            if self.talk_session is not None:
+                self.talk_session.detach_live(self)
+
+    def _exchange(self, sequence, packet, timeout=4.0, retries=3):
+        """Mark LIVE ready only after the final control exchange."""
+        result = super()._exchange(
+            sequence, packet, timeout=timeout, retries=retries
+        )
+        if sequence == 3 and self.talk_session is not None:
+            self.talk_session.set_live_ready(self)
+        return result
 
     def _close_session(self, timeout=0.5):
         """Close with 04, 06 and F0 using the existing UDP socket."""
+        if self.talk_session is not None:
+            self.talk_session.detach_live(self)
+        try:
+            return self._close_talkback_and_live(timeout)
+        finally:
+            self.audio_sender.stop()
+            self.audio_queue.clear()
+
+    def _close_talkback_and_live(self, timeout=0.5):
+        """Perform the existing experimental shutdown sequence."""
         self.audio_sender.stop()
         self.audio_queue.clear()
         self.talk_started_at = None
@@ -81,6 +131,7 @@ class ExperimentalToSeeBLive(SafeToSeeBLive):
             self._handle_talkback_packet(packet)
 
         if controller is not None:
+            self._sync_talk_request()
             self._talkback_tick(time.monotonic())
 
         return packet
@@ -107,6 +158,8 @@ class ExperimentalToSeeBLive(SafeToSeeBLive):
             self.talk_started_at = now
 
         if now - self.talk_started_at >= 15.0:
+            if self.talk_session is not None:
+                self.talk_session.stop_talk()
             self.audio_sender.stop()
             self.audio_queue.clear()
             self.talk_started_at = None

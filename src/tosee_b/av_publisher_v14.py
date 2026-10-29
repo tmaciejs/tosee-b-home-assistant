@@ -38,6 +38,8 @@ def publish_av_session(
     rtsp_url="rtsp://127.0.0.1:8554/tosee-av-test",
     duration=60.0,
     bind_address="0.0.0.0",
+    client_class=None,
+    talk_session=None,
 ):
     """Experimental single-pipe NUT AV publisher."""
     import av
@@ -197,7 +199,7 @@ def publish_av_session(
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.bind((bind_address, 0))
 
-            client = SafeToSeeBLive(
+            client = (client_class or SafeToSeeBLive)(
                 sock=sock,
                 address=address,
                 did=did,
@@ -205,6 +207,9 @@ def publish_av_session(
                 on_h264=on_h264,
                 on_audio=on_audio,
             )
+
+            if talk_session is not None:
+                client.bind_talk_session(talk_session)
 
             stats = client.run(duration=duration)
 

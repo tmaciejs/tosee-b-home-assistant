@@ -8,6 +8,7 @@ from .event_listener import listen_events
 from .mqtt_events import publish_event
 from .av_publisher_v14 import publish_av_session
 from .runner import load_config
+from .talk_session import TalkSession
 
 
 DEFAULT_ENV_FILE = Path(
@@ -46,17 +47,32 @@ def main():
     settings = load_env_file(args.env_file)
 
     video_lock = threading.Lock()
+    talk_session = TalkSession(delay=7.0)
+    talkback_enabled = (
+        settings.get("TOSEE_TALKBACK_ENABLED", "false").lower()
+        in ("true", "1", "yes")
+    )
 
     def run_video():
         try:
             config = load_config(settings)
             print("TOSEE_VIDEO_START", flush=True)
+            client_class = None
+            session = None
+
+            if talkback_enabled:
+                from .live_experimental import ExperimentalToSeeBLive
+                client_class = ExperimentalToSeeBLive
+                session = talk_session
+
             stats = publish_av_session(
                 address=config.address,
                 did=config.did,
                 client_uuid=config.client_uuid,
                 rtsp_url="rtsp://127.0.0.1:8554/tosee-av-test",
                 duration=120.0,
+                client_class=client_class,
+                talk_session=session,
             )
             print(f"TOSEE_VIDEO_OK: {stats}", flush=True)
         except Exception as exc:
@@ -67,11 +83,19 @@ def main():
         finally:
             video_lock.release()
 
+    if talkback_enabled:
+        from .talk_ws import start_talk_websocket_thread
+        start_talk_websocket_thread(talk_session)
+        print("TOSEE_TALK_WS_THREAD_STARTED", flush=True)
+
     print("ToSee-B: nasluch i MQTT aktywne", flush=True)
 
     try:
         for event in listen_events():
             print(f"WYKRYTO: {event.kind}", flush=True)
+            if event.kind == "doorbell":
+                talk_session.doorbell_pressed()
+                print("TALK_GATE_RING_RECORDED", flush=True)
             publish_event(event.kind, environ=settings)
             print(f"MQTT_WYSLANO: {event.kind}", flush=True)
 
