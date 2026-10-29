@@ -3,11 +3,12 @@
 import asyncio
 import threading
 from websockets.asyncio.server import serve
+from websockets.exceptions import ConnectionClosed
 
 from .talk_identity import identify_ha_user
 from .talk_permissions import can_use_talkback
 
-HOST = "127.0.0.1"
+HOST = "192.168.1.137"
 PORT = 19002
 
 
@@ -34,7 +35,15 @@ class TalkWebSocket:
 
             print("WS_AUTH_OK", flush=True)
 
-            async for message in ws:
+            while True:
+                try:
+                    message = await asyncio.wait_for(ws.recv(), timeout=30)
+                except asyncio.TimeoutError:
+                    await ws.close(code=1000, reason="Idle timeout")
+                    break
+                except Exception:
+                    break
+
                 if message == "START":
                     accepted = self.session.request_talk()
                     await ws.send("START_OK" if accepted else "START_BLOCKED")
@@ -59,6 +68,8 @@ class TalkWebSocket:
 
         except asyncio.TimeoutError:
             await ws.close(code=1008, reason="Authentication timeout")
+        except ConnectionClosed:
+            pass
         finally:
             async with self.owner_lock:
                 if self.owner is ws:

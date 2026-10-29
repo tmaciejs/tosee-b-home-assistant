@@ -1,6 +1,7 @@
 """Explicit allowlist for Home Assistant talkback users."""
 
 import os
+from pathlib import Path
 
 
 def can_use_talkback(user):
@@ -18,5 +19,15 @@ def can_use_talkback(user):
         for item in configured.split(",")
         if item.strip()
     }
+
+    try:
+        path = Path("/home/tosee/.tosee-talk-users")
+        allowed.update(
+            line.strip()
+            for line in path.read_text().splitlines()
+            if line.strip()
+        )
+    except OSError:
+        pass
 
     return user_id in allowed
