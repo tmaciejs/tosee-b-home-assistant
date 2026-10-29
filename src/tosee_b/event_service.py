@@ -47,7 +47,7 @@ def main():
     settings = load_env_file(args.env_file)
 
     video_lock = threading.Lock()
-    talk_session = TalkSession(delay=7.0)
+    talk_session = TalkSession(delay=4.0)
     talkback_enabled = (
         settings.get("TOSEE_TALKBACK_ENABLED", "false").lower()
         in ("true", "1", "yes")
