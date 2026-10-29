@@ -47,7 +47,8 @@ class TalkSession:
             if self._client is client:
                 self._client = None
                 self._talk_requested = False
-                self.gate.set_live_ready(False)
+                self._talk_deadline = None
+                self.gate.reset()
 
     def accept_audio_from_browser(self, frame):
         """Accept browser audio only for the current authorized talk."""

@@ -36,9 +36,9 @@ class ExperimentalToSeeBLive(SafeToSeeBLive):
         state = self.talk_controller.state
 
         if not requested:
-            self.audio_sender.stop()
-            self.audio_queue.clear()
             if state in ("starting", "active"):
+                self.audio_sender.stop()
+                self.audio_queue.clear()
                 self.talk_controller.stop()
         elif state == "idle":
             self.talk_controller.start()
