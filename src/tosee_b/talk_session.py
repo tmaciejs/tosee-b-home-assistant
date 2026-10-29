@@ -69,7 +69,8 @@ class TalkSession:
             ):
                 return False
 
-            return client.audio_queue.put_nowait(frame)
+            client.audio_queue.put(frame)
+            return True
 
     def talk_status(self):
         """Return the observed talk state, not just the START request."""
@@ -133,4 +134,5 @@ class TalkSession:
             if not isinstance(frame, bytes) or len(frame) != 320:
                 return False
 
-            return client.audio_queue.put_nowait(frame)
+            client.audio_queue.put(frame)
+            return True

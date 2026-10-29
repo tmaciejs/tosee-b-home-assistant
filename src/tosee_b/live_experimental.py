@@ -178,4 +178,10 @@ class ExperimentalToSeeBLive(SafeToSeeBLive):
         if frame is None:
             return False
 
-        return self.audio_sender.send_if_due(frame, now)
+        sent = self.audio_sender.send_if_due(frame, now)
+        if sent:
+            count = getattr(self, "_tosee_sent_count", 0) + 1
+            self._tosee_sent_count = count
+            if count == 1 or count % 50 == 0:
+                print(f"TALK_DOORBELL_FRAMES={count}", flush=True)
+        return sent

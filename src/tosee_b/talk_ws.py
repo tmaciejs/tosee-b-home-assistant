@@ -59,7 +59,12 @@ class TalkWebSocket:
 
                 elif isinstance(message, bytes) and len(message) == 320:
                     accepted = self.session.accept_audio_from_browser(message)
-                    if not accepted:
+                    if accepted:
+                        count = getattr(ws, "_tosee_audio_count", 0) + 1
+                        ws._tosee_audio_count = count
+                        if count == 1 or count % 50 == 0:
+                            print(f"TALK_BROWSER_FRAMES={count}", flush=True)
+                    else:
                         await ws.send("AUDIO_BLOCKED")
 
                 else:
