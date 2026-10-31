@@ -141,7 +141,28 @@ class ExperimentalToSeeBLive(SafeToSeeBLive):
         if not hasattr(self, "talk_controller"):
             return False
 
-        self.talk_controller.check_timeout(now)
+        try:
+            self.talk_controller.check_timeout(now)
+        except TimeoutError as exc:
+            if str(exc) != "ToSee-B talkback control timeout":
+                raise
+
+            print(
+                f"TALK_CONTROL_TIMEOUT: {exc}",
+                flush=True,
+            )
+
+            if hasattr(self, "audio_sender"):
+                self.audio_sender.stop()
+            if hasattr(self, "audio_queue"):
+                self.audio_queue.clear()
+
+            self.talk_started_at = None
+
+            if self.talk_session is not None:
+                self.talk_session.stop_talk()
+
+            return False
 
         if self.talk_controller.state != "active":
             if hasattr(self, "audio_sender"):

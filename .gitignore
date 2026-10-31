@@ -76,3 +76,8 @@ device_config.json
 *.pfx
 *.credentials
 *tosee*credentials*
+
+# Temporary development and recovery files
+*.candidate
+*.new
+*.bak_*

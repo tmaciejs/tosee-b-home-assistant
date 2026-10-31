@@ -82,11 +82,16 @@ class TalkSession:
             if client is None or not self.gate.can_talk():
                 return "blocked"
 
-            if not self._talk_requested:
-                return "idle"
-
             controller = getattr(client, "talk_controller", None)
-            state = getattr(controller, "state", "idle")
+            state = getattr(controller, "state", None)
+
+            if state in ("error", "stopping"):
+                return "unavailable"
+
+            if not self._talk_requested:
+                if state == "idle":
+                    return "idle"
+                return "unavailable"
 
             if state == "active":
                 return "active"
@@ -103,6 +108,9 @@ class TalkSession:
                 return False
             self._expire_talk_locked()
             if self._talk_requested:
+                return False
+            controller = getattr(self._client, "talk_controller", None)
+            if getattr(controller, "state", None) != "idle":
                 return False
             self._talk_requested = True
             self._talk_deadline = self.gate.clock() + 15.0

@@ -152,8 +152,15 @@ class AudioFrameQueue:
         try:
             self._queue.put_nowait(samples)
         except queue.Full:
-            self._queue.get_nowait()
-            self._queue.put_nowait(samples)
+            try:
+                self._queue.get_nowait()
+            except queue.Empty:
+                pass
+
+            try:
+                self._queue.put_nowait(samples)
+            except queue.Full:
+                pass
 
     def get_nowait(self):
         import queue
