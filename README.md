@@ -58,6 +58,34 @@ Sometimes, the most interesting projects begin with something that refuses to wo
 
 ## Current Status
 
+### Project Update — Phase 2: LAN-Only, Cloud-Free Operation (2 November 2026)
+
+During the development and testing of the original ToSee-B Home Assistant integration, I occasionally encountered anomalies in doorbell button-press detection.
+
+The original event listener relied on UDP packets with a 1104-byte payload to identify doorbell activations. In some circumstances, the expected event was not received or reliably detected, resulting in missed doorbell notifications.
+
+These observations led me to begin a second phase of the project, focusing on operating the ToSee-B doorbell entirely within the local network (LAN), without requiring communication with the manufacturer's cloud servers.
+
+After further packet analysis and testing, I implemented a new LAN-based detector that identifies doorbell button presses using 16-byte UDP payloads sent to destination port 32700.
+
+The new implementation also integrates local LIVE streaming, MQTT notifications, and Home Assistant TALK V2, including microphone-to-doorbell audio communication.
+
+**Successfully tested features:**
+- LAN-based doorbell button detection.
+- Operation with the doorbell's WAN access blocked.
+- Automatic LIVE video and audio streaming.
+- MQTT integration with Home Assistant.
+- TALK V2 microphone audio transmission to the doorbell.
+- Operation with Microsoft Edge and Fully Kiosk Browser.
+
+The original project remains available on the `main` branch. The second-phase implementation is available separately:
+
+**[ToSee-B LAN-Only + TALK V2](https://github.com/tmaciejs/tosee-b-home-assistant/tree/lan-only-talk-v2)**
+
+**[LAN-Only Technical Documentation](https://github.com/tmaciejs/tosee-b-home-assistant/blob/lan-only-talk-v2/docs/LAN_ONLY_PL.md)**
+
+This is a community-developed, experimental solution based on testing with a specific ToSee-B device. Compatibility with other firmware versions has not been established.
+
 ### Working in the Tested Environment
 
 - Decryption and analysis of captured PPCS UDP communication.
