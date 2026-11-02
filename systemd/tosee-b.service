@@ -1,0 +1,19 @@
+[Unit]
+Description=ToSee-B Doorbell MQTT Event Service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=tosee
+Group=tosee
+WorkingDirectory=/home/tosee/tosee-b-home-assistant
+Environment=PYTHONPATH=/home/tosee/tosee-b-home-assistant/src
+ExecStart=/home/tosee/tosee-b-home-assistant/.venv/bin/python -u -m tosee_b.event_service --env-file /home/tosee/.tosee.env
+Restart=always
+RestartSec=10
+TimeoutStopSec=15
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

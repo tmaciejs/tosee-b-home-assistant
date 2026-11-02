@@ -1,0 +1,19 @@
+[Unit]
+Description=ToSee-B LAN-Only Doorbell MQTT Detector
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=tosee
+Group=tosee
+WorkingDirectory=/home/tosee/tosee-b-home-assistant
+Environment=PYTHONPATH=/home/tosee/tosee-b-home-assistant/src
+ExecStart=/home/tosee/tosee-b-home-assistant/.venv/bin/python -u /home/tosee/tosee-b-home-assistant/scripts/tosee-lan-doorbell.py
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

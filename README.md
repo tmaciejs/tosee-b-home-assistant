@@ -114,6 +114,13 @@ The repository also retains earlier experimental versions and offline decoding f
 
 ## Documentation
 
+### LAN-Only / No Cloud
+
+[LAN-Only + TALK V2 documentation](docs/LAN_ONLY_PL.md)
+
+The LAN-only variant detects local UDP doorbell events and supports Home Assistant TALK V2 without requiring the doorbell to contact the vendor cloud.
+
+
 - [Polish project documentation](docs/README_PL.md)
 - [Detailed architecture guide in Polish](docs/ARCHITEKTURA_PL.md)
 

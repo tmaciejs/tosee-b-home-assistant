@@ -38,7 +38,7 @@ def parse_packet(line):
 class EventDeduplicator:
     """Suppress repeated packets from the same activation."""
 
-    def __init__(self, interval=3.0):
+    def __init__(self, interval=90.0):
         if interval < 0:
             raise ValueError("interval must not be negative")
         self.interval = interval

@@ -9,6 +9,7 @@ from .mqtt_events import publish_event
 from .av_publisher_v14 import publish_av_session
 from .runner import load_config
 from .talk_session import TalkSession
+from .manual_live import start_manual_live_server
 
 
 DEFAULT_ENV_FILE = Path(
@@ -70,7 +71,7 @@ def main():
                 did=config.did,
                 client_uuid=config.client_uuid,
                 rtsp_url="rtsp://127.0.0.1:8554/tosee-av-test",
-                duration=120.0,
+                duration=60.0,
                 client_class=client_class,
                 talk_session=session,
             )
@@ -82,6 +83,24 @@ def main():
             )
         finally:
             video_lock.release()
+
+    def start_video():
+        if not video_lock.acquire(blocking=False):
+            return False
+
+        try:
+            threading.Thread(
+                target=run_video,
+                daemon=True,
+                name="tosee-video",
+            ).start()
+        except Exception:
+            video_lock.release()
+            raise
+
+        return True
+
+    start_manual_live_server(start_video, talk_session)
 
     if talkback_enabled:
         from .talk_ws import start_talk_websocket_thread
@@ -100,17 +119,7 @@ def main():
             print(f"MQTT_WYSLANO: {event.kind}", flush=True)
 
             if event.kind in ("motion", "doorbell"):
-                if video_lock.acquire(blocking=False):
-                    try:
-                        threading.Thread(
-                            target=run_video,
-                            daemon=True,
-                            name="tosee-video",
-                        ).start()
-                    except Exception:
-                        video_lock.release()
-                        raise
-                else:
+                if not start_video():
                     print("TOSEE_VIDEO_ALREADY_RUNNING", flush=True)
     except KeyboardInterrupt:
         print("ToSee-B: zatrzymano", flush=True)
