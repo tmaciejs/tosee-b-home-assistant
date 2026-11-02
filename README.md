@@ -62,7 +62,7 @@ Sometimes, the most interesting projects begin with something that refuses to wo
 
 During the development and testing of the original ToSee-B Home Assistant integration, I occasionally encountered anomalies in doorbell button-press detection.
 
-The original event listener relied on UDP packets with a 1104-byte payload to identify doorbell activations. In some circumstances, the expected event was not received or reliably detected, resulting in missed doorbell notifications.
+The original event listener relied on detecting UDP packets with a 1104-byte payload to identify doorbell button presses. During testing, I occasionally observed inconsistent event detection, which could result in missed doorbell notifications. The precise cause was not conclusively established.
 
 These observations led me to begin a second phase of the project, focusing on operating the ToSee-B doorbell entirely within the local network (LAN), without requiring communication with the manufacturer's cloud servers.
 
@@ -83,6 +83,8 @@ The original project remains available on the `main` branch. The second-phase im
 **[ToSee-B LAN-Only + TALK V2](https://github.com/tmaciejs/tosee-b-home-assistant/tree/lan-only-talk-v2)**
 
 **[LAN-Only Technical Documentation](https://github.com/tmaciejs/tosee-b-home-assistant/blob/lan-only-talk-v2/docs/LAN_ONLY_PL.md)**
+
+**Status as of 2 November 2026:** The LAN-only implementation has successfully passed initial functional testing, including doorbell activation, LIVE streaming, MQTT notifications, and TALK V2 audio transmission from a Fully Kiosk Browser tablet to the doorbell speaker. Long-term stability testing is ongoing.
 
 This is a community-developed, experimental solution based on testing with a specific ToSee-B device. Compatibility with other firmware versions has not been established.
 
